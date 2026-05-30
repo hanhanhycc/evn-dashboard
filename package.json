@@ -1,0 +1,21 @@
+{
+  "name": "evnhcmc-dashboard",
+  "version": "1.0.0",
+  "description": "Personal dashboard for EVNHCMC electricity consumption",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "dev:web": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "install:web": "npm --prefix web install"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "tough-cookie": "^4.1.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
