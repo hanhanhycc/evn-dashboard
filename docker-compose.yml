@@ -1,12 +1,11 @@
 services:
   evn-dashboard:
-    # Build locally from the Dockerfile in this folder.
-    # (If you prefer pulling the prebuilt image from GHCR instead, comment out
-    # `build:` and uncomment `image:` below.)
-    build:
-      context: .
-      dockerfile: Dockerfile
-    # image: ghcr.io/hanhanhycc/evn-dashboard:latest
+    # Pull the prebuilt multi-arch image from GHCR (built by GitHub Actions).
+    # To build locally on the NAS instead, comment out `image:` and uncomment `build:`.
+    image: ghcr.io/hanhanhycc/evn-dashboard:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
 
     container_name: evn-dashboard
     restart: unless-stopped
