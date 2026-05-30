@@ -156,6 +156,10 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, uptime: process.uptime(), sessions: sessions.size });
+});
+
 app.post('/api/logout', async (req, res) => {
   const sid = readSid(req);
   if (sid) sessions.delete(sid);
@@ -209,8 +213,9 @@ app.post('/api/dien/kyhoadon', async (req, res) => {
 // SPA history fallback: any non-API GET serves index.html so React Router can handle routes.
 app.get(/^\/(?!api\/).*/, (_req, res, next) => {
   const indexFile = path.join(STATIC_ROOT, 'index.html');
-  if (!fs.existsSync(indexFile)) return next();
-  res.sendFile(indexFile);
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`\n  EVNHCMC dashboard ready  →  http://${HOST}
 });
 
 app.listen(PORT, () => {
