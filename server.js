@@ -7,11 +7,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CookieJar } from 'tough-cookie';
+import { Agent, setGlobalDispatcher } from 'undici';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 const UPSTREAM = 'https://www.evnhcmc.vn';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
+const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS || 20000);
+
+// Force IPv4 + sane timeouts. EVN HCMC has no AAAA records on some POPs, and
+// many VPS providers (incl. Coolify hosts) route IPv6 to a black hole, causing
+// undici to emit a generic 'fetch failed'. Disable IPv6 by hinting family: 4.
+setGlobalDispatcher(new Agent({
+  connect: { family: 4, timeout: 15000 },
+  headersTimeout: UPSTREAM_TIMEOUT_MS,
+  bodyTimeout: UPSTREAM_TIMEOUT_MS,
+}));
 
 // Prefer the built React app in web/dist, fall back to legacy /public during dev.
 const WEB_DIST = path.join(__dirname, 'web', 'dist');
@@ -45,12 +56,27 @@ async function upstream(jar, urlPath, { method = 'GET', body, headers = {}, isJs
   if (method === 'POST' && body && !finalHeaders['Content-Type']) {
     finalHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
   }
-  const res = await fetch(url, {
-    method,
-    headers: finalHeaders,
-    body: method === 'POST' ? body : undefined,
-    redirect: 'manual',
-  });
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), UPSTREAM_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: finalHeaders,
+      body: method === 'POST' ? body : undefined,
+      redirect: 'manual',
+      signal: ac.signal,
+    });
+  } catch (e) {
+    const cause = e?.cause;
+    const detail = cause ? `${cause.code || cause.name || ''} ${cause.message || ''}`.trim() : '';
+    const err = new Error(`upstream fetch failed: ${e.message}${detail ? ` (${detail})` : ''}`);
+    err.code = cause?.code;
+    err.cause = cause;
+    throw err;
+  } finally {
+    clearTimeout(t);
+  }
 
   // Persist Set-Cookie headers into the jar.
   // Node's Headers.getSetCookie() (Node 19.7+) returns an array.
@@ -152,7 +178,12 @@ app.post('/api/login', async (req, res) => {
     res.json({ ok: true, listPE });
   } catch (e) {
     console.error('login error', e);
-    res.status(500).json({ error: 'upstream_error', message: String(e.message || e) });
+    res.status(502).json({
+      error: 'upstream_error',
+      message: String(e.message || e),
+      code: e.code || e.cause?.code,
+      causeMessage: e.cause?.message,
+    });
   }
 });
 
