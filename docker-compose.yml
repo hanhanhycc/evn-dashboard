@@ -11,7 +11,8 @@ services:
     container_name: evn-dashboard
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # host:container — change the host port (left side) if 3030 is taken on your NAS/server.
+      - "3030:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
