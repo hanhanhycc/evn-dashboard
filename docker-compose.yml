@@ -1,0 +1,23 @@
+services:
+  evn-dashboard:
+    # Pull the prebuilt multi-arch image from GHCR (built by GitHub Actions).
+    # Replace `latest` with a specific tag (e.g. v1.0.0 or main-<sha>) if you want pinning.
+    image: ghcr.io/hanhanhycc/evn-dashboard:latest
+    container_name: evn-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # - UPSTREAM_TIMEOUT_MS=20000
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
