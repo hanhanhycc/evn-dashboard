@@ -3,11 +3,11 @@
 
 import express from 'express';
 import crypto from 'node:crypto';
+import dns from 'node:dns';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CookieJar } from 'tough-cookie';
-import { Agent, setGlobalDispatcher } from 'undici';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -15,14 +15,10 @@ const UPSTREAM = 'https://www.evnhcmc.vn';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS || 20000);
 
-// Force IPv4 + sane timeouts. EVN HCMC has no AAAA records on some POPs, and
-// many VPS providers (incl. Coolify hosts) route IPv6 to a black hole, causing
-// undici to emit a generic 'fetch failed'. Disable IPv6 by hinting family: 4.
-setGlobalDispatcher(new Agent({
-  connect: { family: 4, timeout: 15000 },
-  headersTimeout: UPSTREAM_TIMEOUT_MS,
-  bodyTimeout: UPSTREAM_TIMEOUT_MS,
-}));
+// Prefer IPv4 when resolving upstream hosts. EVN HCMC has no AAAA records on
+// some POPs, and many VPS/NAS hosts route IPv6 to a black hole, which surfaces
+// as a generic 'fetch failed' from undici. Built-in API, no extra deps.
+dns.setDefaultResultOrder('ipv4first');
 
 // Prefer the built React app in web/dist, fall back to legacy /public during dev.
 const WEB_DIST = path.join(__dirname, 'web', 'dist');
