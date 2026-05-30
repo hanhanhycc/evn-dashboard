@@ -1,8 +1,13 @@
 services:
   evn-dashboard:
-    # Pull the prebuilt multi-arch image from GHCR (built by GitHub Actions).
-    # Replace `latest` with a specific tag (e.g. v1.0.0 or main-<sha>) if you want pinning.
-    image: ghcr.io/hanhanhycc/evn-dashboard:latest
+    # Build locally from the Dockerfile in this folder.
+    # (If you prefer pulling the prebuilt image from GHCR instead, comment out
+    # `build:` and uncomment `image:` below.)
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # image: ghcr.io/hanhanhycc/evn-dashboard:latest
+
     container_name: evn-dashboard
     restart: unless-stopped
     ports:
