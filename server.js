@@ -213,12 +213,12 @@ app.post('/api/dien/kyhoadon', async (req, res) => {
 // SPA history fallback: any non-API GET serves index.html so React Router can handle routes.
 app.get(/^\/(?!api\/).*/, (_req, res, next) => {
   const indexFile = path.join(STATIC_ROOT, 'index.html');
-const HOST = process.env.HOST || '0.0.0.0';
-app.listen(PORT, HOST, () => {
-  console.log(`\n  EVNHCMC dashboard ready  →  http://${HOST}
+  if (!fs.existsSync(indexFile)) return next();
+  res.sendFile(indexFile);
 });
 
-app.listen(PORT, () => {
-  console.log(`\n  EVNHCMC dashboard ready  →  http://localhost:${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`\n  EVNHCMC dashboard ready  ->  http://${HOST}:${PORT}`);
   console.log(`  Serving static from        ${path.relative(__dirname, STATIC_ROOT) || '.'}\n`);
 });
